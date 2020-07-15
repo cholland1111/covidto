@@ -3,6 +3,7 @@
 import json
 import operator
 import requests
+import os
 from reportlab.platypus import SimpleDocTemplate
 from reportlab.platypus import Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
@@ -18,7 +19,8 @@ def download_data():
 
 def load_data(filename):
     # Loads the contents of local file as a JSON file - not needed w/ download.
-    with open(filename) as json_file:
+    path = os.getcwd()
+    with open(path + filename) as json_file:
         data = json.load(json_file)
     return data
 
@@ -57,8 +59,10 @@ def dict_to_table(data):
 
 
 def generate_report(filename, title, table_data):
+    path = os.getcwd()
+    print(path)
     styles = getSampleStyleSheet()
-    report = SimpleDocTemplate("/tmp/" + filename)
+    report = SimpleDocTemplate(path + "/" + filename)
     report_title = Paragraph(title, styles["h1"])
     table_style = [('GRID', (0,0), (-1,-1), 1, colors.black),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
@@ -71,7 +75,7 @@ def generate_report(filename, title, table_data):
 if __name__ == "__main__":
     # downloads data, processes and outputs dictionaries
     data = download_data()
-    # data = load_data("/Volumes/Macintosh SSD/Users/Christopher/Repository/covidto/COVID19_cases.json")
+    # data = load_data("/COVID19_cases.json")
     postal_code, totals = process_data(data)
     postal_code_table_data = dict_to_table(postal_code)
     totals_table_data = dict_to_table(totals)
