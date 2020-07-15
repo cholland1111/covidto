@@ -62,7 +62,7 @@ def generate_report(filename, title, table_data):
     path = os.getcwd()
     print(path)
     styles = getSampleStyleSheet()
-    report = SimpleDocTemplate(path + "/" + filename)
+    report = SimpleDocTemplate(path + filename)
     report_title = Paragraph(title, styles["h1"])
     table_style = [('GRID', (0,0), (-1,-1), 1, colors.black),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     postal_code, totals = process_data(data)
     postal_code_table_data = dict_to_table(postal_code)
     totals_table_data = dict_to_table(totals)
-    generate_report("active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
-    generate_report("total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
+    generate_report("/active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
+    generate_report("/total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
     # print("Active Cases\n" + str(sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True)))
     # print("Total Cases\n" + str(sorted(totals.items(), key=operator.itemgetter(1), reverse=True)))
