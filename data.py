@@ -17,6 +17,12 @@ def download_data():
     return r.json()
 
 
+def save_data(data):
+    path = os.getcwd()
+    with open(path + '/currentdata.json', 'w') as outfile:
+        json.dump(data, outfile)
+
+
 def load_data(filename):
     # Loads the contents of local file as a JSON file - not needed w/ download.
     path = os.getcwd()
@@ -47,20 +53,18 @@ def process_data(data):
     return postal_code, totals
 
 
-def dict_to_table(data):
-    # turns the dictionary data into a list of lists.
-    table_data = []
-    for key, value in data.items():
-        temp_list = []
-        temp_list.append(key)
-        temp_list.append(value)
-        table_data.append(temp_list)
-    return table_data
+def changed_data(newdata, olddata):
+    changes = {}
+    for newkey, newvalue in newdata.items():
+        for oldkey, oldvalue in olddata.items():
+            if newkey == oldkey:
+                changes[newkey] = newvalue - oldvalue
+                break
+    return changes
 
 
 def generate_report(filename, title, table_data):
     path = os.getcwd()
-    print(path)
     styles = getSampleStyleSheet()
     report = SimpleDocTemplate(path + filename)
     report_title = Paragraph(title, styles["h1"])
@@ -70,16 +74,21 @@ def generate_report(filename, title, table_data):
     report_table = Table(data=table_data, style=table_style, hAlign="LEFT")
     empty_line = Spacer(1, 20)
     report.build([report_title, empty_line, report_table])
+    print(filename.strip("/") + " saved.")
+
+
+def main():
+    # downloads data, processes and outputs dictionaries
+    newdata = download_data()
+    save_data(newdata)
+    olddata = load_data('/currentdata.json')
+    postal_code, totals = process_data(newdata)
+    old_postal, old_totals = process_data(olddata)
+    changes = changed_data(postal_code, old_postal)
+    generate_report("/active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
+    generate_report("/total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
+    generate_report("/changes.pdf", "Changes Since Last Report", sorted(changes.items(), key=operator.itemgetter(1), reverse=True))
 
 
 if __name__ == "__main__":
-    # downloads data, processes and outputs dictionaries
-    data = download_data()
-    # data = load_data("/COVID19_cases.json")
-    postal_code, totals = process_data(data)
-    postal_code_table_data = dict_to_table(postal_code)
-    totals_table_data = dict_to_table(totals)
-    generate_report("/active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
-    generate_report("/total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
-    # print("Active Cases\n" + str(sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True)))
-    # print("Total Cases\n" + str(sorted(totals.items(), key=operator.itemgetter(1), reverse=True)))
+    main()
