@@ -8,6 +8,7 @@ from reportlab.platypus import SimpleDocTemplate
 from reportlab.platypus import Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+import sys
 
 
 def download_data():
@@ -77,14 +78,25 @@ def generate_report(filename, title, table_data):
     print(filename.strip("/") + " saved.")
 
 
+def verify_changes(changes):
+    check = False
+    for value in changes.values():
+        if value != 0:
+            check = True
+    if check is False:
+        print("Same data.")
+        sys.exit(0)
+
+
 def main():
     # downloads data, processes and outputs dictionaries
     newdata = download_data()
-    save_data(newdata)
     olddata = load_data('/currentdata.json')
     postal_code, totals = process_data(newdata)
     old_postal, old_totals = process_data(olddata)
     changes = changed_data(postal_code, old_postal)
+    verify_changes(changes)
+    save_data(newdata)
     generate_report("/active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
     generate_report("/total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
     generate_report("/changes.pdf", "Changes Since Last Report", sorted(changes.items(), key=operator.itemgetter(1), reverse=True))
