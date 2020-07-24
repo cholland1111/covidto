@@ -4,11 +4,11 @@ import json
 import operator
 import requests
 import os
+import sys
 from reportlab.platypus import SimpleDocTemplate
 from reportlab.platypus import Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
-import sys
 
 
 def download_data():
@@ -19,13 +19,14 @@ def download_data():
 
 
 def save_data(data):
+    # Saves copy of website data locally.
     path = os.getcwd()
     with open(path + '/currentdata.json', 'w') as outfile:
         json.dump(data, outfile)
 
 
 def load_data(filename):
-    # Loads the contents of local file as a JSON file - not needed w/ download.
+    # Loads the contents of local file as a JSON file.
     path = os.getcwd()
     with open(path + filename) as json_file:
         data = json.load(json_file)
@@ -33,25 +34,25 @@ def load_data(filename):
 
 
 def process_data(data):
-    postal_code = {}
-    totals = {}
+    active_cases = {}
+    total_cases = {}
     for item in data:
         # postal_code returns all active cases by postal code
         if item["FSA"] is None:
             break
-        if item["FSA"] not in postal_code.keys():
-            postal_code[item["FSA"]] = 0
+        if item["FSA"] not in active_cases.keys():
+            active_cases[item["FSA"]] = 0
             if item["Outcome"] == "ACTIVE":
-                postal_code[item["FSA"]] += 1
+                active_cases[item["FSA"]] += 1
         else:
             if item["Outcome"] == "ACTIVE":
-                postal_code[item["FSA"]] += 1
+                active_cases[item["FSA"]] += 1
         # totals returns total cases by postal code
-        if item["FSA"] not in totals.keys():
-            totals[item["FSA"]] = 1
+        if item["FSA"] not in total_cases.keys():
+            total_cases[item["FSA"]] = 1
         else:
-            totals[item["FSA"]] += 1
-    return postal_code, totals
+            total_cases[item["FSA"]] += 1
+    return active_cases, total_cases
 
 
 def changed_data(newdata, olddata):
@@ -84,22 +85,34 @@ def verify_changes(changes):
         if value != 0:
             check = True
     if check is False:
-        print("Same data.")
+        print("Database not updated.")
         sys.exit(0)
+
+
+def active(active):
+    total_active = 0
+    population = 2956024
+    for value in active.values():
+        total_active += value
+    total_per_pop = total_active/population*100000
+    print("Active Cases: " + str(total_active))
+    print("Total Cases per 100,000: {:.2f}".format(total_per_pop))
 
 
 def main():
     # downloads data, processes and outputs dictionaries
-    newdata = download_data()
-    olddata = load_data('/currentdata.json')
-    postal_code, totals = process_data(newdata)
-    old_postal, old_totals = process_data(olddata)
-    changes = changed_data(postal_code, old_postal)
+    new_data = download_data()
+    old_data = load_data('/currentdata.json')
+    active_cases, totals_cases = process_data(new_data)
+    old_active, old_totals = process_data(old_data)
+    changes = changed_data(active_cases, old_active)
+    active(active_cases)
     verify_changes(changes)
-    save_data(newdata)
-    generate_report("/active.pdf", "Active Cases", sorted(postal_code.items(), key=operator.itemgetter(1), reverse=True))
-    generate_report("/total.pdf", "Total Cases", sorted(totals.items(), key=operator.itemgetter(1), reverse=True))
+    save_data(new_data)
+    generate_report("/active.pdf", "Active Cases", sorted(active_cases.items(), key=operator.itemgetter(1), reverse=True))
+    generate_report("/total.pdf", "Total Cases", sorted(totals_cases.items(), key=operator.itemgetter(1), reverse=True))
     generate_report("/changes.pdf", "Changes Since Last Report", sorted(changes.items(), key=operator.itemgetter(1), reverse=True))
+    sys.exit(0)
 
 
 if __name__ == "__main__":
