@@ -38,8 +38,6 @@ def process_data(data):
     total_cases = {}
     for item in data:
         # postal_code returns all active cases by postal code
-        if item["FSA"] is None:
-            break
         if item["FSA"] not in active_cases.keys():
             active_cases[item["FSA"]] = 0
             if item["Outcome"] == "ACTIVE":
@@ -52,6 +50,16 @@ def process_data(data):
             total_cases[item["FSA"]] = 1
         else:
             total_cases[item["FSA"]] += 1
+    try:
+        active_cases["Unknown"] = active_cases[None]
+        active_cases.pop(None)
+    except Exception:
+        pass
+    try:
+        total_cases["Unknown"] = total_cases[None]
+        total_cases.pop(None)
+    except Exception:
+        pass
     return active_cases, total_cases
 
 
