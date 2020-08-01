@@ -110,16 +110,22 @@ def active(active):
 def main():
     # downloads data, processes and outputs dictionaries
     new_data = download_data()
-    old_data = load_data('/currentdata.json')
+    try:
+        old_data = load_data('/currentdata.json')
+        changed = True
+    except Exception:
+        print("No old data.")
+        changed = False
     active_cases, totals_cases = process_data(new_data)
-    old_active, old_totals = process_data(old_data)
-    changes = changed_data(active_cases, old_active)
+    if changed is True:
+        old_active, old_totals = process_data(old_data)
+        changes = changed_data(active_cases, old_active)
+        verify_changes(changes)
+        generate_report("/changes.pdf", "Changes Since Last Report", sorted(changes.items(), key=operator.itemgetter(1), reverse=True))
     active(active_cases)
-    verify_changes(changes)
     save_data(new_data)
     generate_report("/active.pdf", "Active Cases", sorted(active_cases.items(), key=operator.itemgetter(1), reverse=True))
     generate_report("/total.pdf", "Total Cases", sorted(totals_cases.items(), key=operator.itemgetter(1), reverse=True))
-    generate_report("/changes.pdf", "Changes Since Last Report", sorted(changes.items(), key=operator.itemgetter(1), reverse=True))
     sys.exit(0)
 
 
